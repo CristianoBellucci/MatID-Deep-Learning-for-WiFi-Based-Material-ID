@@ -1,2 +1,28 @@
-# MatID-Deep-Learning-for-WiFi-Based-Material-ID
-My thesis project. MatID uses WiFi signals for material identification via deep learning. It integrates classical signal processing with 2D/1D CNNs and ResNet18 models. In addition, offers a privacy-preserving, cost-effective alternative to visual-based methods, enhancing WiFi sensing applications.
+# MatID: A Deep Learning Approach to WiFi-Based Material Identification
+
+Description:
+
+This project explores the innovative use of WiFi signals for material identification through deep learning. Traditionally, WiFi technology has been used for internet connectivity and local area networking. However, this project leverages WiFi sensing capabilities to interpret environmental factors, offering a non-invasive and privacy-preserving alternative to visual-based sensing methods.
+
+Key Features:
+
+WiFi Sensing: Utilizes amplitude and phase changes in WiFi signals to sense and interpret the environment.
+Deep Learning Integration: Combines classical WiFi signal processing techniques with advanced deep learning models, including 2D and 1D CNNs and ResNet18, for accurate material identification.
+Signal Preprocessing: Implements advanced preprocessing techniques to enhance signal clarity and reduce noise.
+Cost-Effective Solution: Leverages existing WiFi infrastructure, providing a low-cost alternative to sophisticated visual-based systems.
+Applications: Potential applications include person re-identification, fall detection, and in-baggage object identification.
+
+Research Contributions:
+
+Improved Accuracy and Robustness: Achieves higher classification accuracy and robustness across diverse environments.
+Expansion of WiFi Sensing Applications: Demonstrates new applications for WiFi sensing, contributing to the field's body of research.
+
+Future Directions:
+
+Further enhancement of signal preprocessing techniques.
+Exploration of additional applications and integration with other IoT devices.
+
+Repository Contents:
+
+Source Code: Implementation of the MatID deep learning model and signal preprocessing techniques.
+Documentation: Thesis.
