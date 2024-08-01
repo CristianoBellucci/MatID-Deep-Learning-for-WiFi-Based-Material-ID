@@ -23,9 +23,9 @@ This project explores the innovative use of WiFi signals for material identifica
 - Exploration of additional applications and integration with other IoT devices.
 - Perform experiments in different rooms to ensure the robustness of the method.
 - Improving dataset.
-- Creation of a Domain Adaptation System to improve performance in very different environments.
+- Creation of a Domain Adaptation System to improve performance in different environments.
 
 ## Repository Contents:
 
 - **Source Code**: Implementation of the MatID deep learning model and signal preprocessing techniques.
-- **Documentation**: Thesis.
+- **Documentation**: Thesis, Presentation.
