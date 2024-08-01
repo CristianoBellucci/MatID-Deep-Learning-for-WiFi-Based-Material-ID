@@ -1,16 +1,16 @@
 # MatID: A Deep Learning Approach to WiFi-Based Material Identification
 
-Description:
+##Description:
 
 This project explores the innovative use of WiFi signals for material identification through deep learning. Traditionally, WiFi technology has been used for internet connectivity and local area networking. However, this project leverages WiFi sensing capabilities to interpret environmental factors, offering a non-invasive and privacy-preserving alternative to visual-based sensing methods.
 
-Key Features:
+##Key Features:
 
-WiFi Sensing: Utilizes amplitude and phase changes in WiFi signals to sense and interpret the environment.
+- **WiFi Sensing**: Utilizes amplitude and phase changes in WiFi signals to sense and interpret the environment.
 Deep Learning Integration: Combines classical WiFi signal processing techniques with advanced deep learning models, including 2D and 1D CNNs and ResNet18, for accurate material identification.
-Signal Preprocessing: Implements advanced preprocessing techniques to enhance signal clarity and reduce noise.
+- **Signal Preprocessing**: Implements advanced preprocessing techniques to enhance signal clarity and reduce noise.
 Cost-Effective Solution: Leverages existing WiFi infrastructure, providing a low-cost alternative to sophisticated visual-based systems.
-Applications: Potential applications include person re-identification, fall detection, and in-baggage object identification.
+- **Applications**: Potential applications include person re-identification, fall detection, and in-baggage object identification.
 
 Research Contributions:
 
