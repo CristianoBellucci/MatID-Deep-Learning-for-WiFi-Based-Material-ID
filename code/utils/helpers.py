@@ -2,9 +2,11 @@
 
 import os
 import json
+import random
 import numpy as np
+import torch
 import matplotlib.pyplot as plt
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Any, Optional
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
@@ -30,10 +32,11 @@ def plot_confusion_matrix(
         save_path: Path to save the plot (optional)
     """
     # Compute confusion matrix
-    cm = confusion_matrix(y_true, y_pred)
-    
+    cm = confusion_matrix(y_true, y_pred, labels=range(len(classes)))
+
     if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        # Guard against classes with no true samples (avoids division by zero)
+        cm = cm.astype('float') / np.maximum(cm.sum(axis=1), 1)[:, np.newaxis]
         print("Normalized confusion matrix")
     else:
         print('Confusion matrix, without normalization')
@@ -62,6 +65,7 @@ def plot_confusion_matrix(
     if save_path:
         plt.savefig(save_path, bbox_inches='tight')
     plt.show()
+    plt.close()
 
 
 def save_metrics(
@@ -75,7 +79,7 @@ def save_metrics(
         filepath: Path to save the metrics file
     """
     # Create directory if it doesn't exist
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
     
     # Convert numpy arrays to lists for JSON serialization
     metrics_serializable = {}
@@ -111,10 +115,6 @@ def set_random_seed(seed: int = 104) -> None:
     Args:
         seed: Random seed value
     """
-    import random
-    import numpy as np
-    import torch
-    
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -145,10 +145,11 @@ def plot_learning_curves(
     plt.legend()
     
     if save_path:
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        os.makedirs(os.path.dirname(save_path) or '.', exist_ok=True)
         plt.savefig(save_path, bbox_inches='tight')
-    
+
     plt.show()
+    plt.close()
 
 
 def print_metrics(metrics: Dict[str, float], prefix: str = '') -> None:

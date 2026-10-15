@@ -4,14 +4,10 @@ import os
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-from typing import Optional, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 from config import (
     DEV_PATH, TRAIN_PATH, TEST_PATH, LABELS, LABEL_TO_ID, BATCH_SIZE
-)
-from .preprocessing import (
-    phase_sanitization, amplitude_sanitization,
-    prepare_spectrogram_for_resnet
 )
 
 
@@ -57,8 +53,9 @@ class MaterialDataset(Dataset):
                 
             # Get all .npy files for this label
             for root, _, files in os.walk(label_dir):
-                # Check environment filter
-                env = "box" if "box" in root else "not_box"
+                # Check environment filter ("not_box" contains "box", so rule it out first)
+                rel_root = os.path.relpath(root, label_dir)
+                env = "box" if "box" in rel_root and "not_box" not in rel_root else "not_box"
                 if self.environment != "all" and env != self.environment:
                     continue
                     
@@ -135,8 +132,11 @@ class MaterialDataset(Dataset):
             label = sample["label"]
             class_counts[label] = class_counts.get(label, 0) + 1
         
-        # Calculate weights (inverse frequency)
-        weights = [1.0 / class_counts[LABELS[i]] for i in range(len(LABELS))]
+        # Calculate weights (inverse frequency); classes with no samples get weight 0
+        weights = [
+            1.0 / class_counts[label] if class_counts.get(label) else 0.0
+            for label in LABELS
+        ]
         return torch.FloatTensor(weights)
 
 
@@ -166,7 +166,7 @@ def create_data_loaders(
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
-        pin_memory=True
+        pin_memory=torch.cuda.is_available()
     )
     
     val_loader = DataLoader(
@@ -174,7 +174,7 @@ def create_data_loaders(
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
-        pin_memory=True
+        pin_memory=torch.cuda.is_available()
     )
     
     test_loader = DataLoader(
@@ -182,7 +182,7 @@ def create_data_loaders(
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
-        pin_memory=True
+        pin_memory=torch.cuda.is_available()
     )
     
     return train_loader, val_loader, test_loader

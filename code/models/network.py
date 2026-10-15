@@ -4,9 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet18
-from typing import Optional, Dict, Any
 
-from config import LABELS, DROPOUT
+from config import LABELS, DROPOUT, DEVICE
 
 
 class MaterialIdentificationNetwork(nn.Module):
@@ -33,7 +32,7 @@ class MaterialIdentificationNetwork(nn.Module):
         self.c3d = nn.Conv1d(128, 256, kernel_size=3, stride=2)
         
         # ResNet18 backbone (modified for our use case)
-        self.resnet = resnet18(pretrained=False)
+        self.resnet = resnet18(weights=None)
         num_ftrs = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(num_ftrs, num_classes)
         
@@ -105,7 +104,7 @@ class MaterialIdentificationNetwork(nn.Module):
         return F.cross_entropy(preds, labels)
 
 
-def create_model(device: str = "cuda" if torch.cuda.is_available() else "cpu",
+def create_model(device: str = DEVICE,
                 num_classes: int = len(LABELS),
                 dropout: float = DROPOUT) -> MaterialIdentificationNetwork:
     """Create and initialize the model.
@@ -125,7 +124,7 @@ def create_model(device: str = "cuda" if torch.cuda.is_available() else "cpu",
     
     # Initialize weights
     def init_weights(m):
-        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Conv1d) or isinstance(m, nn.Linear):
+        if isinstance(m, (nn.Conv2d, nn.Conv1d, nn.Linear)):
             nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)

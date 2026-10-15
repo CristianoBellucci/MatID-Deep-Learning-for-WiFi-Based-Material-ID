@@ -2,19 +2,18 @@
 
 import os
 import time
-import numpy as np
 import torch
 from torch.optim import Optimizer, Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Tuple, Optional
 import matplotlib.pyplot as plt
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, 
     f1_score, confusion_matrix
 )
 
-from config import CHECKPOINTS_PATH, PATIENCE, LEN_STACK_PATIENCE, LABELS
+from config import CHECKPOINTS_PATH, DEVICE, PATIENCE, LEN_STACK_PATIENCE, LABELS
 
 
 class Trainer:
@@ -24,7 +23,7 @@ class Trainer:
         self, 
         model: torch.nn.Module, 
         optimizer: Optimizer,
-        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+        device: str = DEVICE,
         checkpoint_dir: str = CHECKPOINTS_PATH,
         patience: int = PATIENCE,
         len_stack_patience: int = LEN_STACK_PATIENCE
@@ -60,8 +59,7 @@ class Trainer:
             optimizer, 
             mode='min', 
             factor=0.1, 
-            patience=patience//2, 
-            verbose=True
+            patience=patience//2
         )
     
     def train_epoch(self, train_loader: DataLoader) -> float:
@@ -124,8 +122,8 @@ class Trainer:
                 
                 # Get predictions
                 _, preds = torch.max(outputs, 1)
-                all_preds.extend(preds.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
+                all_preds.extend(preds.cpu().tolist())
+                all_labels.extend(labels.cpu().tolist())
         
         # Calculate metrics
         avg_loss = total_loss / len(val_loader)
@@ -174,35 +172,34 @@ class Trainer:
         Returns:
             Tuple of (train_losses, val_losses) lists
         """
-        train_losses = []
-        val_losses = []
-        
         for epoch in range(1, num_epochs + 1):
             start_time = time.time()
-            
+
             # Train for one epoch
             train_loss = self.train_epoch(train_loader)
-            train_losses.append(train_loss)
-            
+            self.train_losses.append(train_loss)
+
             # Validate
             val_loss, val_metrics = self.validate(val_loader)
-            val_losses.append(val_loss)
+            self.val_losses.append(val_loss)
             
             # Update learning rate
             self.scheduler.step(val_loss)
             
             # Print progress
             elapsed = time.time() - start_time
-            print(f'Epoch {epoch}/{num_epochs} - {elapsed:.1f}s - ' \
-                  f'train_loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - ' \
-                  f'val_acc: {val_metrics["accuracy"]:.4f} - val_f1: {val_metrics["f1"]:.4f}')
+            lr = self.optimizer.param_groups[-1]['lr']
+            print(f'Epoch {epoch}/{num_epochs} - {elapsed:.1f}s - '
+                  f'train_loss: {train_loss:.4f} - val_loss: {val_loss:.4f} - '
+                  f'val_acc: {val_metrics["accuracy"]:.4f} - val_f1: {val_metrics["f1"]:.4f} - '
+                  f'lr: {lr:.2e}')
             
             # Check for early stopping
             if early_stopping and self._check_early_stopping(val_loss):
                 print(f'Early stopping after {epoch} epochs')
                 break
         
-        return train_losses, val_losses
+        return self.train_losses, self.val_losses
     
     def _check_early_stopping(self, val_loss: float) -> bool:
         """Check if training should stop early.
@@ -279,18 +276,20 @@ class Trainer:
                 
                 # Get predictions
                 _, preds = torch.max(outputs, 1)
-                all_preds.extend(preds.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
+                all_preds.extend(preds.cpu().tolist())
+                all_labels.extend(labels.cpu().tolist())
         
         # Calculate metrics
         metrics = self._calculate_metrics(all_preds, all_labels)
         
         # Calculate confusion matrix
-        cm = confusion_matrix(all_labels, all_preds)
-        
+        cm = confusion_matrix(all_labels, all_preds, labels=range(len(LABELS)))
+
         return {
             **metrics,
-            'confusion_matrix': cm
+            'confusion_matrix': cm,
+            'true_labels': all_labels,
+            'pred_labels': all_preds
         }
     
     def plot_training_history(self, save_path: Optional[str] = None):
@@ -316,7 +315,7 @@ def create_trainer(
     model: torch.nn.Module,
     learning_rate: float = 1e-4,
     weight_decay: float = 1e-4,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    device: str = DEVICE,
     checkpoint_dir: str = CHECKPOINTS_PATH,
     patience: int = PATIENCE,
     len_stack_patience: int = LEN_STACK_PATIENCE

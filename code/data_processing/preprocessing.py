@@ -2,9 +2,6 @@
 
 import numpy as np
 from scipy import signal
-from scipy.ndimage import gaussian_filter1d
-from scipy import spatial
-import torch
 
 from config import DEFAULT_WINDOW_SIZE, DEFAULT_SAMPLINGS, DEFAULT_RESAMPLING_RATIO, EPSILON
 
@@ -43,8 +40,9 @@ def phase_sanitization(csi_phases):
     all_phase_san = []
     for phases in csi_phases:
         phases_san = []
+        running_means = np.cumsum(phases) / np.arange(1, len(phases) + 1)
         for i, phase in enumerate(phases, start=1):
-            b = (1/i) * sum(phases[:i])  # phase
+            b = running_means[i - 1]  # phase
 
             if i == 1:
                 phase_san = phase - b
@@ -57,11 +55,11 @@ def phase_sanitization(csi_phases):
 
     return np.asarray(all_phase_san)
 
-def compute_stft(signal, fs=1, stride=1, wind_wid=5, dft_wid=5, window_type='gaussian'):
+def compute_stft(sig, fs=1, stride=1, wind_wid=5, dft_wid=5, window_type='gaussian'):
     """Compute the Short Time Fourier Transform (STFT) of a signal.
     
     Args:
-        signal: Time series of measurement values
+        sig: Time series of measurement values
         fs: Sampling frequency
         stride: Stride of the window
         wind_wid: Width of the window
@@ -80,7 +78,7 @@ def compute_stft(signal, fs=1, stride=1, wind_wid=5, dft_wid=5, window_type='gau
         window = signal.get_window(window_type, wind_wid)
 
     f_bins, _, stft_spectrum = signal.stft(
-        x=signal, 
+        x=sig,
         fs=fs, 
         window=window, 
         nperseg=wind_wid, 
@@ -95,7 +93,7 @@ def compute_stft(signal, fs=1, stride=1, wind_wid=5, dft_wid=5, window_type='gau
 
     # Take the absolute value of the STFT spectrum to get magnitude
     stft_spectrum = np.abs(stft_spectrum)
-    stft_spectrum = stft_spectrum.reshape(1068, -1)
+    stft_spectrum = stft_spectrum.reshape(DEFAULT_SAMPLINGS, -1)
     return f_bins, stft_spectrum
 
 def normalize_data(data):

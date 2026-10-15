@@ -2,6 +2,8 @@
 
 import os
 
+import torch
+
 # Set the seed for reproducibility
 SEED = 104
 

@@ -6,15 +6,14 @@ import json
 from datetime import datetime
 
 import torch
-import numpy as np
 
 from config import (
-    DEVICE, LEARNING_RATE, RESNET_LEARNING_RATE, WEIGHT_DECAY, 
-    RESNET_WEIGHT_DECAY, EPOCHS, BATCH_SIZE, LABELS, CHECKPOINTS_PATH
+    SEED, LEARNING_RATE, RESNET_LEARNING_RATE, WEIGHT_DECAY,
+    RESNET_WEIGHT_DECAY, EPOCHS, BATCH_SIZE, DROPOUT, LABELS, CHECKPOINTS_PATH
 )
 from data_processing.dataset import create_data_loaders
 from models.network import create_model
-from training.trainer import create_trainer
+from training.trainer import Trainer
 from utils.helpers import (
     set_random_seed, plot_confusion_matrix, save_metrics, plot_learning_curves
 )
@@ -32,7 +31,7 @@ def parse_args():
                         help='Environment to use for training')
     
     # Model arguments
-    parser.add_argument('--dropout', type=float, default=0.2,
+    parser.add_argument('--dropout', type=float, default=DROPOUT,
                         help='Dropout rate')
     
     # Training arguments
@@ -64,7 +63,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def setup_experiment(args):
+def setup_experiment(args, device):
     """Set up the experiment directory and save the configuration."""
     # Create experiment directory
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -72,8 +71,8 @@ def setup_experiment(args):
     os.makedirs(exp_dir, exist_ok=True)
     
     # Save configuration
-    config = vars(args)
-    config['device'] = 'cuda' if torch.cuda.is_available() and not args.no_cuda else 'cpu'
+    config = dict(vars(args))
+    config['device'] = device
     
     with open(os.path.join(exp_dir, 'config.json'), 'w') as f:
         json.dump(config, f, indent=2)
@@ -82,18 +81,19 @@ def setup_experiment(args):
 
 
 def main():
+    """Train the model, evaluate it on the test set and save the results."""
     # Parse command line arguments
     args = parse_args()
     
     # Set random seed for reproducibility
-    set_random_seed()
+    set_random_seed(SEED)
     
     # Set device
     device = 'cuda' if torch.cuda.is_available() and not args.no_cuda else 'cpu'
     print(f"Using device: {device}")
     
     # Set up experiment directory
-    exp_dir, config = setup_experiment(args)
+    exp_dir, config = setup_experiment(args, device)
     print(f"Experiment directory: {exp_dir}")
     
     # Create data loaders
@@ -129,11 +129,10 @@ def main():
         ]
     )
     
-    # Create trainer
-    trainer = create_trainer(
+    # Create trainer (uses the optimizer above so the per-group learning rates apply)
+    trainer = Trainer(
         model=model,
-        learning_rate=args.lr,
-        weight_decay=args.weight_decay,
+        optimizer=optimizer,
         device=device,
         checkpoint_dir=exp_dir,
         patience=args.patience
